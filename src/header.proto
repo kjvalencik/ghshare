@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package ghshare;
+
+message Encryption {
+	message Aes256Siv {
+		bytes iv = 1;
+		bytes key = 2;
+	}
+
+	oneof key {
+		Aes256Siv aes_256_siv = 1;
+	}
+}
+
+message Header {
+	uint32 chunk_size = 1;
+	repeated bytes encrypted_keys = 2;
+}
