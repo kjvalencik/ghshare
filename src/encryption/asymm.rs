@@ -1,10 +1,33 @@
 use failure::Error;
 use openssh_keys::{self, PublicKey};
 use openssl::bn::BigNum;
+use openssl::error::ErrorStack;
 use openssl::rsa::{self, Rsa};
 use rpassword;
 
 use encryption::Encryptor;
+
+const ERROR_REASON_MASK: u64 = 0xFFF;
+
+#[derive(Debug)]
+enum OpenSslErrorReason {
+	PemRBadPasswordRead = 104,
+}
+
+impl OpenSslErrorReason {
+	fn from_error_stack(stack: &ErrorStack) -> Option<OpenSslErrorReason> {
+		stack.errors().get(0).and_then(|err| {
+			match err.code() & ERROR_REASON_MASK {
+				code if code == OpenSslErrorReason::PemRBadPasswordRead
+					as u64 =>
+				{
+					Some(OpenSslErrorReason::PemRBadPasswordRead)
+				}
+				_ => None,
+			}
+		})
+	}
+}
 
 impl Encryptor for PublicKey {
 	fn encrypt(self, data: &[u8]) -> Result<Vec<u8>, Error> {
@@ -44,6 +67,12 @@ pub fn decrypt_key(
 	let kek = match kek {
 		Ok(kek) => Ok(kek),
 		Err(err) => {
+			// Only prompt if this was a bad password error
+			match OpenSslErrorReason::from_error_stack(&err) {
+				Some(OpenSslErrorReason::PemRBadPasswordRead) => {}
+				_ => return Err(err.into()),
+			};
+
 			if prompt {
 				let passphrase =
 					rpassword::prompt_password_stderr("Passphrase: ")?;
