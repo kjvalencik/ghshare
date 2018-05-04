@@ -59,13 +59,13 @@ where
 				let mut buf = &mut buf[0..(TAG_SIZE + n)];
 
 				encryptor.seal_last_in_place(&ad, &mut buf);
-				output.write(buf)?;
+				output.write_all(buf)?;
 
 				break;
 			}
 			_ => {
 				encryptor.seal_next_in_place(&ad, &mut buf);
-				output.write(&buf)?;
+				output.write_all(&buf)?;
 			}
 		}
 	}
@@ -93,14 +93,14 @@ where
 			n if n < buf.len() => {
 				let buf = decryptor.open_last_in_place(&ad, &mut buf[0..n])?;
 
-				output.write(buf)?;
+				output.write_all(buf)?;
 
 				break;
 			}
 			_ => {
 				let buf = decryptor.open_next_in_place(&ad, &mut buf)?;
 
-				output.write(&buf)?;
+				output.write_all(&buf)?;
 			}
 		}
 	}

@@ -68,7 +68,7 @@ fn run_encrypt(opt: cli::Encrypt) -> Result<(), Error> {
 		.filter_map(|res| res.ok())
 		.collect::<Vec<_>>();
 
-	if encrypted_keys.len() <= 0 {
+	if encrypted_keys.is_empty() {
 		bail!("User does not have a supported key");
 	}
 
@@ -79,7 +79,7 @@ fn run_encrypt(opt: cli::Encrypt) -> Result<(), Error> {
 		chunk_size: MESSAGE_SIZE as u32,
 	}).encode_length_delimited()?;
 
-	output.write(&header)?;
+	output.write_all(&header)?;
 
 	encrypt_stream(&key, &mut input, &mut output, MESSAGE_SIZE)?;
 

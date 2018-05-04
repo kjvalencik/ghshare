@@ -68,7 +68,7 @@ impl GithubPublicKeyRequest {
 				None,
 			)
 		// Must not be reading from stdin to prompt for username / password
-		} else if let Some(_) = opt.input {
+		} else if opt.input.is_some() {
 			let username = prompt_stderr("Username: ")?;
 			let password = rpassword::prompt_password_stderr("Password: ")?;
 			let password = Some(password);
@@ -126,12 +126,10 @@ pub fn get_public_keys(
 	let mut req = GithubPublicKeyRequest::from_opt(&opt)?;
 	let mut res = req.request().send()?;
 
-	if let Some(_) = opt.input {
-		if is_otp_required(&res) {
-			req.prompt_otp()?;
+	if opt.input.is_some() && is_otp_required(&res) {
+		req.prompt_otp()?;
 
-			res = req.request().send()?;
-		}
+		res = req.request().send()?;
 	}
 
 	if res.status() != StatusCode::Ok {
