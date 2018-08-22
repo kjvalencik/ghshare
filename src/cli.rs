@@ -15,8 +15,11 @@ pub struct Decrypt {
 
 #[derive(StructOpt, Debug)]
 pub struct Encrypt {
-	#[structopt(long = "host", short = "h",
-	            default_value = "https://api.github.com")]
+	#[structopt(
+		long = "host",
+		short = "h",
+		default_value = "https://api.github.com"
+	)]
 	pub host: String,
 
 	#[structopt(long = "recipient", short = "r")]

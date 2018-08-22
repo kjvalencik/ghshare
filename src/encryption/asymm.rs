@@ -18,8 +18,8 @@ impl OpenSslErrorReason {
 	fn from_error_stack(stack: &ErrorStack) -> Option<OpenSslErrorReason> {
 		stack.errors().get(0).and_then(|err| {
 			match err.code() & ERROR_REASON_MASK {
-				code if code == OpenSslErrorReason::PemRBadPasswordRead
-					as u64 =>
+				code if code
+					== OpenSslErrorReason::PemRBadPasswordRead as u64 =>
 				{
 					Some(OpenSslErrorReason::PemRBadPasswordRead)
 				}
@@ -32,10 +32,7 @@ impl OpenSslErrorReason {
 impl Encryptor for PublicKey {
 	fn encrypt(self, data: &[u8]) -> Result<Vec<u8>, Error> {
 		match self.data {
-			openssh_keys::Data::Rsa {
-				exponent,
-				modulus,
-			} => {
+			openssh_keys::Data::Rsa { exponent, modulus } => {
 				let exponent = BigNum::from_slice(&exponent)?;
 				let modulus = BigNum::from_slice(&modulus)?;
 				let rsa = Rsa::from_public_components(modulus, exponent)?;
@@ -101,8 +98,8 @@ pub fn decrypt_key(
 mod tests {
 	use openssh_keys::PublicKey;
 
-	use encryption::Encryptor;
 	use encryption::asymm::decrypt_key;
+	use encryption::Encryptor;
 
 	#[test]
 	fn test_encrypt_decrypt() {
@@ -111,9 +108,7 @@ mod tests {
 
 		let public_key = PublicKey::parse(public_key).unwrap();
 		let cleartext = "Hello, World!";
-		let ciphertext = public_key
-			.encrypt(cleartext.as_bytes())
-			.unwrap();
+		let ciphertext = public_key.encrypt(cleartext.as_bytes()).unwrap();
 		let ciphertexts = vec![ciphertext];
 
 		let key = decrypt_key(private_key, &ciphertexts, false).unwrap();

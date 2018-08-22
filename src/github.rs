@@ -63,23 +63,14 @@ struct GithubPublicKeyRequest {
 impl GithubPublicKeyRequest {
 	fn from_opt(opt: &cli::Encrypt) -> Result<GithubPublicKeyRequest, Error> {
 		let (token, basic) = if let Some(ref token) = opt.token {
-			(
-				Some(Authorization(format!("token {}", token))),
-				None,
-			)
+			(Some(Authorization(format!("token {}", token))), None)
 		// Must not be reading from stdin to prompt for username / password
 		} else if opt.input.is_some() {
 			let username = prompt_stderr("Username: ")?;
 			let password = rpassword::prompt_password_stderr("Password: ")?;
 			let password = Some(password);
 
-			(
-				None,
-				Some(Authorization(Basic {
-					username,
-					password,
-				})),
-			)
+			(None, Some(Authorization(Basic { username, password })))
 		} else {
 			(None, None)
 		};

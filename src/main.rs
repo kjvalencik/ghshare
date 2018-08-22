@@ -1,6 +1,6 @@
 extern crate byteorder;
-extern crate env_logger;
 extern crate dirs;
+extern crate env_logger;
 
 #[macro_use]
 extern crate failure;
@@ -69,8 +69,7 @@ fn run_encrypt(opt: cli::Encrypt) -> Result<(), Error> {
 			let kek = key.to_public_key()?;
 
 			kek.encrypt(&key_encoded)
-		})
-		.filter_map(|res| res.ok())
+		}).filter_map(|res| res.ok())
 		.collect::<Vec<_>>();
 
 	if encrypted_keys.is_empty() {
@@ -108,11 +107,8 @@ fn run_decrypt(opt: cli::Decrypt) -> Result<(), Error> {
 	let mut output = CliOutput::new(opt.output)?;
 	let header = Header::decode_length_delimited(&mut input)?;
 	let private_key = read_private_key(&opt.key)?;
-	let key = decrypt_key(
-		&private_key,
-		&header.encrypted_keys,
-		prompt_passphrase,
-	)?;
+	let key =
+		decrypt_key(&private_key, &header.encrypted_keys, prompt_passphrase)?;
 
 	let encryption = Encryption::decode(&key)?;
 
