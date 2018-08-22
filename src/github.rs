@@ -60,27 +60,29 @@ struct GithubPublicKeyRequest {
 	otp: Option<XGitHubOTP>,
 }
 
-impl GithubPublicKeyRequest {
-	fn from_opt(opt: &cli::Encrypt) -> Result<GithubPublicKeyRequest, Error> {
-		let (token, basic) = if let Some(ref token) = opt.token {
-			(Some(Authorization(format!("token {}", token))), None)
-		// Must not be reading from stdin to prompt for username / password
-		} else if opt.input.is_some() {
-			let username = prompt_stderr("Username: ")?;
-			let password = rpassword::prompt_password_stderr("Password: ")?;
-			let password = Some(password);
-
-			(None, Some(Authorization(Basic { username, password })))
-		} else {
-			(None, None)
-		};
-
-		Ok(GithubPublicKeyRequest {
+impl<'a> From<&'a cli::Encrypt> for GithubPublicKeyRequest {
+	fn from(opt: &cli::Encrypt) -> GithubPublicKeyRequest {
+		GithubPublicKeyRequest {
 			host: format!("{}/users/{}/keys", opt.host, opt.recipient),
 			otp: None,
-			basic,
-			token,
-		})
+			basic: None,
+			token: None,
+		}
+	}
+}
+
+impl GithubPublicKeyRequest {
+	fn set_token(&mut self, token: &str) {
+		self.token = Some(Authorization(format!("token {}", token)));
+	}
+
+	fn prompt_credentials(&mut self) -> Result<(), Error> {
+		let username = prompt_stderr("Username: ")?;
+		let password = Some(rpassword::prompt_password_stderr("Password: ")?);
+
+		self.basic = Some(Authorization(Basic { username, password }));
+
+		Ok(())
 	}
 
 	fn prompt_otp(&mut self) -> Result<(), Error> {
@@ -114,14 +116,37 @@ impl GithubPublicKeyRequest {
 pub fn get_public_keys(
 	opt: &cli::Encrypt,
 ) -> Result<Vec<GithubPublicKey>, Error> {
-	let mut req = GithubPublicKeyRequest::from_opt(&opt)?;
-	let mut res = req.request().send()?;
+	let mut req: GithubPublicKeyRequest = opt.into();
 
-	if opt.input.is_some() && is_otp_required(&res) {
-		req.prompt_otp()?;
+	// Always use token if we have one
+	let mut res = if let Some(ref token) = opt.token {
+		req.set_token(token);
 
-		res = req.request().send()?;
-	}
+		req.request().send()?
+	} else {
+		// Try without credentials
+		let res = req.request().send()?;
+
+		// If success or we can't prompt for credentials
+		if res.status() == StatusCode::Ok || opt.input.is_none() {
+			res
+
+		// Prompt for credentials
+		} else {
+			req.prompt_credentials()?;
+
+			let res = req.request().send()?;
+
+			// Check if OTP was required
+			if is_otp_required(&res) {
+				req.prompt_otp()?;
+
+				req.request().send()?
+			} else {
+				res
+			}
+		}
+	};
 
 	if res.status() != StatusCode::Ok {
 		bail!("Failed to get public keys");
