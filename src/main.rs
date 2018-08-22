@@ -1,10 +1,15 @@
 extern crate byteorder;
+extern crate env_logger;
+extern crate dirs;
+
+#[macro_use]
+extern crate failure;
 
 #[macro_use]
 extern crate hyper;
 
 #[macro_use]
-extern crate failure;
+extern crate log;
 extern crate miscreant;
 extern crate openssh_keys;
 extern crate openssl;
@@ -28,18 +33,18 @@ mod encryption;
 mod github;
 mod header;
 
-use std::env;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
+use env_logger::Env;
 use failure::Error;
 use structopt::StructOpt;
 
 use cli::{CliInput, CliOutput, Opt};
-use encryption::Encryptor;
 use encryption::asymm::decrypt_key;
 use encryption::symm::{decrypt_stream, encrypt_stream, MESSAGE_SIZE};
+use encryption::Encryptor;
 use header::encryption::{Aes256Siv, Key};
 use header::{Encryption, Header};
 
@@ -88,7 +93,7 @@ fn run_encrypt(opt: cli::Encrypt) -> Result<(), Error> {
 
 fn read_private_key(key: &Option<String>) -> Result<Vec<u8>, Error> {
 	let key_path = key.clone().map(PathBuf::from).or_else(|| {
-		env::home_dir().map(|home_dir| home_dir.join(".ssh").join("id_rsa"))
+		dirs::home_dir().map(|home_dir| home_dir.join(".ssh").join("id_rsa"))
 	});
 
 	match key_path {
@@ -134,11 +139,18 @@ fn run(opt: Opt) -> Result<(), Error> {
 }
 
 fn main() {
-	let opt = Opt::from_args();
-	let mut stderr = std::io::stderr();
+	let env = Env::default()
+		.filter_or("GHSHARE_LOG_LEVEL", "warn")
+		.write_style_or("GHSHARE_LOG_STYLE", "always");
+
+	env_logger::init_from_env(env);
 
 	// Load root certificates
 	openssl_probe::init_ssl_cert_env_vars();
+
+	info!("Parsing arguments");
+	let opt = Opt::from_args();
+	let mut stderr = std::io::stderr();
 
 	if let Err(err) = run(opt) {
 		for fail in err.causes() {
