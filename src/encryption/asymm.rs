@@ -2,6 +2,7 @@ use failure::Error;
 use openssh_keys::{self, PublicKey};
 use openssl::bn::BigNum;
 use openssl::error::ErrorStack;
+use openssl::pkey::Private;
 use openssl::rsa::{self, Rsa};
 use rpassword;
 
@@ -55,14 +56,13 @@ impl Encryptor for PublicKey {
 	}
 }
 
-pub fn decrypt_key(
+fn decrypt_private_key(
 	pem: &[u8],
-	keys: &[Vec<u8>],
 	prompt: bool,
-) -> Result<Vec<u8>, Error> {
-	let kek = Rsa::private_key_from_pem_callback(pem, |_| Ok(0));
-	let kek = match kek {
-		Ok(kek) => Ok(kek),
+) -> Result<Rsa<Private>, Error> {
+	let key = Rsa::private_key_from_pem_callback(pem, |_| Ok(0));
+	let key = match key {
+		Ok(key) => Ok(key),
 		Err(err) => {
 			// Only prompt if this was a bad password error
 			match OpenSslErrorReason::from_error_stack(&err) {
@@ -81,6 +81,27 @@ pub fn decrypt_key(
 		}
 	}?;
 
+	Ok(key)
+}
+
+pub fn decrypt_data(
+	pem: &[u8],
+	data: &[u8],
+	prompt: bool,
+) -> Result<Vec<u8>, Error> {
+	let key = decrypt_private_key(pem, prompt)?;
+	let mut buf = vec![0; key.size() as usize];
+	let len = key.private_decrypt(&data, &mut buf, rsa::Padding::PKCS1)?;
+
+	Ok(buf[..len].to_vec())
+}
+
+pub fn decrypt_key(
+	pem: &[u8],
+	keys: &[Vec<u8>],
+	prompt: bool,
+) -> Result<Vec<u8>, Error> {
+	let kek = decrypt_private_key(pem, prompt)?;
 	let mut last_error = format_err!("Could not find a key");
 	let mut buf = vec![0; kek.size() as usize];
 

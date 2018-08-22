@@ -11,6 +11,13 @@ pub struct Decrypt {
 
 	#[structopt(long = "output", short = "o")]
 	pub output: Option<String>,
+
+	#[structopt(
+		long = "small",
+		short = "s",
+		help = "decrypt small data without a header, OpenSSL alternative",
+	)]
+	pub small: bool,
 }
 
 #[derive(StructOpt, Debug)]
@@ -33,6 +40,13 @@ pub struct Encrypt {
 
 	#[structopt(long = "output", short = "o")]
 	pub output: Option<String>,
+
+	#[structopt(
+		long = "small",
+		short = "s",
+		help = "encrypt without header for small data, OpenSSL compatible",
+	)]
+	pub small: bool,
 }
 
 #[derive(StructOpt, Debug)]

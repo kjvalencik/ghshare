@@ -42,7 +42,7 @@ use failure::Error;
 use structopt::StructOpt;
 
 use cli::{CliInput, CliOutput, Opt};
-use encryption::asymm::decrypt_key;
+use encryption::asymm::{decrypt_data, decrypt_key};
 use encryption::symm::{decrypt_stream, encrypt_stream, MESSAGE_SIZE};
 use encryption::Encryptor;
 use header::encryption::{Aes256Siv, Key};
@@ -60,7 +60,32 @@ where
 	Ok(buf)
 }
 
+fn run_encrypt_no_header(opt: cli::Encrypt) -> Result<(), Error> {
+	let keys = github::get_public_keys(&opt)?;
+	let mut data = Vec::new();
+	let mut input = CliInput::new(opt.input)?;
+
+	input.read_to_end(&mut data)?;
+
+	let encrypted_data = keys
+		.into_iter()
+		.map(|key| -> Result<_, _> { key.to_public_key()?.encrypt(&data) })
+		.filter_map(|res| res.ok())
+		.last()
+		.ok_or_else(|| format_err!("User does not have a supported key"))?;
+
+	let mut output = CliOutput::new(opt.output)?;
+
+	output.write_all(&encrypted_data)?;
+
+	Ok(())
+}
+
 fn run_encrypt(opt: cli::Encrypt) -> Result<(), Error> {
+	if opt.small {
+		return run_encrypt_no_header(opt);
+	}
+
 	let key = Aes256Siv::new()?;
 	let key_encoded = key.clone().encode()?;
 	let encrypted_keys = github::get_public_keys(&opt)?
@@ -105,23 +130,38 @@ fn run_decrypt(opt: cli::Decrypt) -> Result<(), Error> {
 	let prompt_passphrase = opt.input.is_some();
 	let mut input = CliInput::new(opt.input)?;
 	let mut output = CliOutput::new(opt.output)?;
-	let header = Header::decode_length_delimited(&mut input)?;
 	let private_key = read_private_key(&opt.key)?;
-	let key =
-		decrypt_key(&private_key, &header.encrypted_keys, prompt_passphrase)?;
 
-	let encryption = Encryption::decode(&key)?;
+	if opt.small {
+		let mut encrypted_data = Vec::new();
 
-	match encryption.key {
-		Some(Key::Aes256Siv(key)) => {
-			decrypt_stream(
-				&key,
-				&mut input,
-				&mut output,
-				header.chunk_size as usize,
-			)?;
+		input.read_to_end(&mut encrypted_data)?;
+
+		let data =
+			decrypt_data(&private_key, &encrypted_data, prompt_passphrase)?;
+
+		output.write_all(&data)?;
+	} else {
+		let header = Header::decode_length_delimited(&mut input)?;
+		let key = decrypt_key(
+			&private_key,
+			&header.encrypted_keys,
+			prompt_passphrase,
+		)?;
+
+		let encryption = Encryption::decode(&key)?;
+
+		match encryption.key {
+			Some(Key::Aes256Siv(key)) => {
+				decrypt_stream(
+					&key,
+					&mut input,
+					&mut output,
+					header.chunk_size as usize,
+				)?;
+			}
+			_ => bail!("Could not find a usable key"),
 		}
-		_ => bail!("Could not find a usable key"),
 	}
 
 	Ok(())
