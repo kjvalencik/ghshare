@@ -4,13 +4,13 @@ use failure::Error;
 
 use miscreant::stream::{Aes256SivDecryptor, Aes256SivEncryptor};
 
-use header::encryption::Aes256Siv;
+use crate::header::encryption::Aes256Siv;
 
 pub const TAG_SIZE: usize = 16;
 pub const MESSAGE_SIZE: usize = 8 * 1024 - TAG_SIZE;
 
 trait ChunkReader {
-	fn read_chunk(&mut self, &mut [u8]) -> io::Result<usize>;
+	fn read_chunk(&mut self, _: &mut [u8]) -> io::Result<usize>;
 }
 
 impl<T> ChunkReader for T
@@ -113,7 +113,7 @@ mod tests {
 	use std::cmp::min;
 	use std::io::{self, Read, Write};
 
-	use encryption::symm::{
+	use crate::encryption::symm::{
 		decrypt_stream,
 		encrypt_stream,
 		Aes256Siv,

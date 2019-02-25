@@ -6,7 +6,7 @@ use openssh_keys::PublicKey;
 use reqwest::{self, RequestBuilder, Response, StatusCode};
 use rpassword;
 
-use cli;
+use crate::cli;
 
 header! {
 	(XGitHubOTP, "X-GitHub-OTP") => [String]

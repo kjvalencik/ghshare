@@ -41,12 +41,12 @@ use env_logger::Env;
 use failure::Error;
 use structopt::StructOpt;
 
-use cli::{CliInput, CliOutput, Opt};
-use encryption::asymm::{decrypt_data, decrypt_key};
-use encryption::symm::{decrypt_stream, encrypt_stream, MESSAGE_SIZE};
-use encryption::Encryptor;
-use header::encryption::{Aes256Siv, Key};
-use header::{Encryption, Header};
+use crate::cli::{CliInput, CliOutput, Opt};
+use crate::encryption::asymm::{decrypt_data, decrypt_key};
+use crate::encryption::symm::{decrypt_stream, encrypt_stream, MESSAGE_SIZE};
+use crate::encryption::Encryptor;
+use crate::header::encryption::{Aes256Siv, Key};
+use crate::header::{Encryption, Header};
 
 fn read_file<P>(file_name: P) -> Result<Vec<u8>, Error>
 where

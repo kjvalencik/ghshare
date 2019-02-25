@@ -6,7 +6,7 @@ use openssl::pkey::Private;
 use openssl::rsa::{self, Rsa};
 use rpassword;
 
-use encryption::Encryptor;
+use crate::encryption::Encryptor;
 
 const ERROR_REASON_MASK: u64 = 0xFFF;
 
@@ -119,8 +119,8 @@ pub fn decrypt_key(
 mod tests {
 	use openssh_keys::PublicKey;
 
-	use encryption::asymm::decrypt_key;
-	use encryption::Encryptor;
+	use crate::encryption::asymm::decrypt_key;
+	use crate::encryption::Encryptor;
 
 	#[test]
 	fn test_encrypt_decrypt() {
