@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::{self, Read, Stdin, Stdout, Write};
 
+use structopt::StructOpt;
+
 #[derive(StructOpt, Debug)]
 pub struct Decrypt {
 	#[structopt(long = "key", short = "k")]

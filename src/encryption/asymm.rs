@@ -1,4 +1,4 @@
-use failure::Error;
+use failure::{bail, Error, format_err};
 use openssh_keys::{self, PublicKey};
 use openssl::bn::BigNum;
 use openssl::error::ErrorStack;

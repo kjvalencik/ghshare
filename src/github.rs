@@ -1,9 +1,10 @@
 use std::io::{self, Write};
 
-use failure::{Error, ResultExt, SyncFailure};
+use failure::{bail, Error, ResultExt, SyncFailure};
 use openssh_keys::PublicKey;
 use reqwest::{self, RequestBuilder, Response};
 use rpassword;
+use serde_derive::Deserialize;
 
 use crate::cli;
 

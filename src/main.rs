@@ -1,41 +1,19 @@
-extern crate byteorder;
-extern crate dirs;
-extern crate env_logger;
-
-#[macro_use]
-extern crate failure;
-
-#[macro_use]
-extern crate log;
-extern crate miscreant;
-extern crate openssh_keys;
-extern crate openssl;
-extern crate openssl_probe;
-extern crate prost;
-
-#[macro_use]
-extern crate prost_derive;
-extern crate reqwest;
-extern crate rpassword;
-
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-
-#[macro_use]
-extern crate structopt;
-
 mod cli;
 mod encryption;
 mod github;
 mod header;
+
+// Required for macros in generated code
+#[macro_use]
+extern crate prost_derive;
 
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use env_logger::Env;
-use failure::Error;
+use log::info;
+use failure::{bail, Error, format_err};
 use structopt::StructOpt;
 
 use crate::cli::{CliInput, CliOutput, Opt};
