@@ -12,8 +12,8 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use env_logger::Env;
+use failure::{bail, format_err, Error};
 use log::info;
-use failure::{bail, Error, format_err};
 use structopt::StructOpt;
 
 use crate::cli::{CliInput, CliOutput, Opt};
@@ -69,7 +69,8 @@ fn run_encrypt(opt: cli::Encrypt) -> Result<(), Error> {
 			let kek = key.to_public_key()?;
 
 			kek.encrypt(&key_encoded)
-		}).filter_map(Result::ok)
+		})
+		.filter_map(Result::ok)
 		.collect::<Vec<_>>();
 
 	if encrypted_keys.is_empty() {
@@ -81,7 +82,8 @@ fn run_encrypt(opt: cli::Encrypt) -> Result<(), Error> {
 	let header = (Header {
 		encrypted_keys,
 		chunk_size: MESSAGE_SIZE as u32,
-	}).encode_length_delimited()?;
+	})
+	.encode_length_delimited()?;
 
 	output.write_all(&header)?;
 

@@ -17,7 +17,7 @@ pub struct Decrypt {
 	#[structopt(
 		long = "small",
 		short = "s",
-		help = "decrypt small data without a header, OpenSSL alternative",
+		help = "decrypt small data without a header, OpenSSL alternative"
 	)]
 	pub small: bool,
 }
@@ -46,7 +46,7 @@ pub struct Encrypt {
 	#[structopt(
 		long = "small",
 		short = "s",
-		help = "encrypt without header for small data, OpenSSL compatible",
+		help = "encrypt without header for small data, OpenSSL compatible"
 	)]
 	pub small: bool,
 }
