@@ -9,7 +9,11 @@ env:
 matrix:
   include:
     - rust: nightly
-    - env: TARGET=x86_64-unknown-linux-musl DEPLOY=1 OPENSSL_STATIC=1
+    - env:
+        - TARGET=x86_64-unknown-linux-musl
+        - DEPLOY=1
+        - OPENSSL_STATIC=1
+        - RUSTFLAGS="-Ctarget-feature=+aes,+ssse3"
       before_script:
         - rustup target add $TARGET
         - curl https://www.openssl.org/source/openssl-1.0.2o.tar.gz | tar xzf -
@@ -22,7 +26,12 @@ matrix:
 
     - os: osx
     - os: osx
-      env: MACOSX_DEPLOYMENT_TARGET=10.7 DEPLOY=1 TARGET=x86_64-apple-darwin OPENSSL_STATIC=1
+      env:
+        - MACOSX_DEPLOYMENT_TARGET=10.7
+        - DEPLOY=1
+        - TARGET=x86_64-apple-darwin
+        - OPENSSL_STATIC=1
+        - RUSTFLAGS="-Ctarget-feature=+aes,+ssse3"
       script: cargo build --release --target $TARGET
 
 addons:
