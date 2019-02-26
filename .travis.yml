@@ -37,7 +37,7 @@ matrix:
 addons:
   apt:
     packages:
-    - musl-tools
+      - musl-tools
 
 script:
   - cargo test
