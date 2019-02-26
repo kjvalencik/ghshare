@@ -1,16 +1,11 @@
 use std::io::{self, Write};
 
 use failure::{Error, ResultExt, SyncFailure};
-use hyper::header::{Authorization, Basic};
 use openssh_keys::PublicKey;
-use reqwest::{self, RequestBuilder, Response, StatusCode};
+use reqwest::{self, RequestBuilder, Response};
 use rpassword;
 
 use crate::cli;
-
-header! {
-	(XGitHubOTP, "X-GitHub-OTP") => [String]
-}
 
 #[derive(Debug, Deserialize)]
 pub struct GithubPublicKey {
@@ -40,9 +35,9 @@ fn prompt_stderr(prompt: &str) -> Result<String, Error> {
 }
 
 fn is_otp_required(res: &Response) -> bool {
-	if res.status() == StatusCode::Unauthorized {
-		if let Some(header) = res.headers().get::<XGitHubOTP>() {
-			header.starts_with("required")
+	if res.status().is_client_error() {
+		if let Some(header) = res.headers().get("X-GitHub-OTP") {
+			header.as_bytes().starts_with(b"required")
 		} else {
 			false
 		}
@@ -55,9 +50,9 @@ fn is_otp_required(res: &Response) -> bool {
 // This exists as a builder to make similar requests multiple times.
 struct GithubPublicKeyRequest {
 	host: String,
-	token: Option<Authorization<String>>,
-	basic: Option<Authorization<Basic>>,
-	otp: Option<XGitHubOTP>,
+	token: Option<String>,
+	basic: Option<(String, Option<String>)>,
+	otp: Option<String>,
 }
 
 impl<'a> From<&'a cli::Encrypt> for GithubPublicKeyRequest {
@@ -73,14 +68,14 @@ impl<'a> From<&'a cli::Encrypt> for GithubPublicKeyRequest {
 
 impl GithubPublicKeyRequest {
 	fn set_token(&mut self, token: &str) {
-		self.token = Some(Authorization(format!("token {}", token)));
+		self.token = Some(format!("token {}", token));
 	}
 
 	fn prompt_credentials(&mut self) -> Result<(), Error> {
 		let username = prompt_stderr("Username: ")?;
 		let password = Some(rpassword::prompt_password_stderr("Password: ")?);
 
-		self.basic = Some(Authorization(Basic { username, password }));
+		self.basic = Some((username, password));
 
 		Ok(())
 	}
@@ -88,7 +83,7 @@ impl GithubPublicKeyRequest {
 	fn prompt_otp(&mut self) -> Result<(), Error> {
 		let otp = prompt_stderr("One Time Password: ")?;
 
-		self.otp = Some(XGitHubOTP(otp));
+		self.otp = Some(otp);
 
 		Ok(())
 	}
@@ -98,15 +93,15 @@ impl GithubPublicKeyRequest {
 		let mut req = client.get(&self.host);
 
 		if let Some(ref token) = self.token {
-			req.header(token.clone());
+			req = req.header("Authorization", token.to_owned());
 		}
 
-		if let Some(ref basic) = self.basic {
-			req.header(basic.clone());
+		if let Some((ref username, ref password)) = self.basic {
+			req = req.basic_auth(username, password.as_ref());
 		}
 
 		if let Some(ref otp) = self.otp {
-			req.header(otp.clone());
+			req = req.header("X-GitHub-OTP", otp.to_owned());
 		}
 
 		req
@@ -128,7 +123,7 @@ pub fn get_public_keys(
 		let res = req.request().send()?;
 
 		// If success or we can't prompt for credentials
-		if res.status() == StatusCode::Ok || opt.input.is_none() {
+		if res.status().is_success() || opt.input.is_none() {
 			res
 
 		// Prompt for credentials
@@ -148,7 +143,7 @@ pub fn get_public_keys(
 		}
 	};
 
-	if res.status() != StatusCode::Ok {
+	if !res.status().is_success() {
 		bail!("Failed to get public keys");
 	}
 

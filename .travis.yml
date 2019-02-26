@@ -3,6 +3,9 @@ sudo: false
 rust: nightly
 dist: trusty
 
+env:
+  - RUSTFLAGS="-Ctarget-feature=+aes,+ssse3"
+
 matrix:
   include:
     - rust: nightly

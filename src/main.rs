@@ -6,9 +6,6 @@ extern crate env_logger;
 extern crate failure;
 
 #[macro_use]
-extern crate hyper;
-
-#[macro_use]
 extern crate log;
 extern crate miscreant;
 extern crate openssh_keys;
@@ -70,7 +67,7 @@ fn run_encrypt_no_header(opt: cli::Encrypt) -> Result<(), Error> {
 	let encrypted_data = keys
 		.into_iter()
 		.map(|key| -> Result<_, _> { key.to_public_key()?.encrypt(&data) })
-		.filter_map(|res| res.ok())
+		.filter_map(Result::ok)
 		.last()
 		.ok_or_else(|| format_err!("User does not have a supported key"))?;
 
@@ -94,7 +91,7 @@ fn run_encrypt(opt: cli::Encrypt) -> Result<(), Error> {
 			let kek = key.to_public_key()?;
 
 			kek.encrypt(&key_encoded)
-		}).filter_map(|res| res.ok())
+		}).filter_map(Result::ok)
 		.collect::<Vec<_>>();
 
 	if encrypted_keys.is_empty() {
@@ -189,7 +186,7 @@ fn main() {
 	let mut stderr = std::io::stderr();
 
 	if let Err(err) = run(opt) {
-		for fail in err.causes() {
+		for fail in err.iter_chain() {
 			writeln!(stderr, "{}", fail).expect("Failed to write to stderr");
 		}
 	}
