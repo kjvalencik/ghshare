@@ -23,16 +23,16 @@ use crate::encryption::Encryptor;
 use crate::header::encryption::{Aes256Siv, Key};
 use crate::header::{Encryption, Header};
 
-fn read_file<P>(file_name: P) -> Result<Vec<u8>, Error>
+fn read_file<P>(file_name: P) -> Result<String, Error>
 where
 	P: AsRef<Path>,
 {
 	let mut file = File::open(file_name)?;
-	let mut buf = Vec::new();
+	let mut s = String::new();
 
-	file.read_to_end(&mut buf)?;
+	file.read_to_string(&mut s)?;
 
-	Ok(buf)
+	Ok(s)
 }
 
 fn run_encrypt_no_header(opt: cli::Encrypt) -> Result<(), Error> {
@@ -92,7 +92,7 @@ fn run_encrypt(opt: cli::Encrypt) -> Result<(), Error> {
 	Ok(())
 }
 
-fn read_private_key(key: &Option<String>) -> Result<Vec<u8>, Error> {
+fn read_private_key(key: &Option<String>) -> Result<String, Error> {
 	let key_path = key.clone().map(PathBuf::from).or_else(|| {
 		dirs::home_dir().map(|home_dir| home_dir.join(".ssh").join("id_rsa"))
 	});

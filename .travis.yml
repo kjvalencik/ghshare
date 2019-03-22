@@ -38,6 +38,7 @@ addons:
   apt:
     packages:
       - musl-tools
+      - libsodium-dev
 
 script:
   - cargo test
