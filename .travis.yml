@@ -1,47 +1,37 @@
 language: rust
 sudo: false
-rust: nightly
+rust: stable
 dist: trusty
 
-env:
-  - RUSTFLAGS="-Ctarget-feature=+aes,+ssse3"
+services:
+  - docker
 
 matrix:
   include:
-    - rust: nightly
     - env:
-        - TARGET=x86_64-unknown-linux-musl
         - DEPLOY=1
-        - OPENSSL_STATIC=1
-        - RUSTFLAGS="-Ctarget-feature=+aes,+ssse3"
+        - TARGET=x86_64-unknown-linux-musl
       before_script:
-        - rustup target add $TARGET
-        - curl https://www.openssl.org/source/openssl-1.0.2o.tar.gz | tar xzf -
-        - (cd openssl-1.0.2o &&
-          CC=musl-gcc ./Configure --prefix=$HOME/openssl-musl no-dso no-ssl2 no-ssl3 linux-x86_64 -fPIC &&
-          make -j$(nproc) &&
-          make install)
-        - export OPENSSL_DIR=$HOME/openssl-musl
-      script: cargo build --release --target $TARGET
-
-    - os: osx
+        - docker build -t ghshare .
+        - docker run -v $(pwd):/tmp/src --entrypoint=cp ghshare -r /src/target /tmp/src/.
+      script: docker run --entrypoint=cargo ghshare test --release --target $TARGET
     - os: osx
       env:
         - MACOSX_DEPLOYMENT_TARGET=10.7
         - DEPLOY=1
         - TARGET=x86_64-apple-darwin
         - OPENSSL_STATIC=1
+        - SODIUM_STATIC=1
         - RUSTFLAGS="-Ctarget-feature=+aes,+ssse3"
-      script: cargo build --release --target $TARGET
-
-addons:
-  apt:
-    packages:
-      - musl-tools
-      - libsodium-dev
-
-script:
-  - cargo test
+      before_script:
+        - curl https://download.libsodium.org/libsodium/releases/libsodium-1.0.17.tar.gz | tar xzf -
+        - cd libsodium-1.0.17
+          && ./configure --prefix=$HOME/libsodium --enable-shared=no
+          && make -j$(nproc)
+          && make install
+        - export PKG_CONFIG_PATH=$HOME/libsodium/lib/pkgconfig
+        - cargo build --release --target $TARGET
+      script: cargo test --release --target $TARGET
 
 before_deploy:
   - name="ghshare-$TRAVIS_TAG-$TARGET"
