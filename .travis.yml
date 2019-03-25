@@ -24,14 +24,15 @@ matrix:
         - SODIUM_STATIC=1
         - RUSTFLAGS="-Ctarget-feature=+aes,+ssse3"
       before_script:
+        - cd ..
         - curl https://download.libsodium.org/libsodium/releases/libsodium-1.0.17.tar.gz | tar xzf -
         - cd libsodium-1.0.17
           && ./configure --prefix=$HOME/libsodium --enable-shared=no
           && make -j$(nproc)
           && make install
-        - export PKG_CONFIG_PATH=$HOME/libsodium/lib/pkgconfig
-        - cargo build --release --target $TARGET
-      script: cargo test --release --target $TARGET
+        - export PKG_CONFIG_PATH="$HOME/libsodium/lib/pkgconfig:$PKG_CONFIG_PATH"
+        - cd ../ghshare
+      script: cargo build --release --target $TARGET
 
 before_deploy:
   - name="ghshare-$TRAVIS_TAG-$TARGET"
