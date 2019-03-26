@@ -34,7 +34,7 @@ pub struct Encrypt {
 	#[structopt(long = "recipient", short = "r")]
 	pub recipient: String,
 
-	#[structopt(long = "token", short = "a", help = "perosnal access token")]
+	#[structopt(long = "token", short = "a", help = "personal access token")]
 	pub token: Option<String>,
 
 	#[structopt(long = "input", short = "i")]
