@@ -50,7 +50,7 @@ fn decrypt_private_key(
 			} else {
 				key
 			}
-		},
+		}
 		key => key,
 	};
 
