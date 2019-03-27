@@ -32,6 +32,7 @@ matrix:
           && make install
         - export PKG_CONFIG_PATH="$HOME/libsodium/lib/pkgconfig:$PKG_CONFIG_PATH"
         - cd ../ghshare
+        - cargo test --release --target $TARGET
       script: cargo build --release --target $TARGET
 
 before_deploy:
