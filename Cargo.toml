@@ -25,7 +25,7 @@ serde = "1"
 serde_derive = "1"
 serde_json = "1"
 structopt = "0.2"
-thrussh-keys = { git = "https://github.com/kjvalencik/thrussh", path = "thrussh-keys" }
+thrussh-keys = "0.11"
 
 [build-dependencies]
 prost-build = "0.4"
