@@ -9,6 +9,7 @@ Sometimes you want to share something encrypted and the recipient hasn't created
 ### Download binary
 
 Download a [binary release](https://github.com/kjvalencik/ghshare/releases)  
+
 You will need to take the normal actions your platform requires to run a binary downloaded from the internet (macOS example: Enable macOS run unsigned binary, Make binary executable, Add binary to PATH, etc...)  
 
 ## Usage
@@ -27,8 +28,7 @@ Basic form of encryption command:
 ghshare encrypt --input <plaintextFileName> --output <ciphertextFileName> --recipient <receiversGithubUsername>
 ```
 
-> :information_source: Each of the receiver's GitHub public keys (available here: https://api.github.com/users/receiversGithubUsername/keys) will be used to encrypt the input file.
-> The receiver will only need to possess and use one of their corresponding private keys to decrypt the data.
+> :information_source: Each of the receiver's GitHub public keys (available here: https://api.github.com/users/receiversGithubUsername/keys) will be used for encryption. The receiver will only need to possess and use one of their corresponding private keys to decrypt the data.
 
 #### flags
 
@@ -43,8 +43,8 @@ ghshare encrypt --input <plaintextFileName> --output <ciphertextFileName> --reci
  flag               | param        | default                | required | purpose
 --------------------|--------------|------------------------|----------|---------
 `--host`, `-h`      | `<host>`     | https://api.github.com | `false`  | Endpoint to query for recipient's public keys
-`--input`, `-i`     | `<path>`     |                        | `true`   | Path to file to be encrypted
-`--output`, `-o`    | `<path>`     |                        | `true`   | File path to write encrypted data to
+`--input`, `-i`     | `<path>`     | `stdin`                | `false`  | Path to file to be encrypted
+`--output`, `-o`    | `<path>`     | `stdout`               | `false`  | File path to write encrypted data to
 `--recipient`, `-r` | `<username>` |                        | `true`   | GitHub username of the encrypted data recipient
 `--token`, `-a`     | `<token>`    |                        | `false`  | Manually provide GitHub access token
 
@@ -56,7 +56,7 @@ Basic form of decryption command:
 ghshare decrypt --input <ciphertextFileName> --output <plaintextFileName> --key <personalGithubPrivateKeyFile>
 ```
 
-> :construction: At the moment **Only RSA keypairs supported** (see TODO)
+> :construction: At the moment **Only RSA keypairs supported** (see [TODO](#todo))
 
 #### flags
 
@@ -68,11 +68,11 @@ ghshare decrypt --input <ciphertextFileName> --output <plaintextFileName> --key 
 
 #### options
 
- flag            | param    | required | purpose
------------------|----------|----------|---------
-`--input`, `-i`  | `<path>` | `true`   | Path to file to be decrypted
-`--key`, `-k`    | `<path>` | `true`   | Path to private key file used for decryption
-`--output`, `-o` | `<path>` | `true`   | File path to write decrypted data to
+ flag            | param    | default  | required | purpose
+-----------------|----------|----------|----------|---------
+`--input`, `-i`  | `<path>` | `stdin`  | `false`  | Path to file to be decrypted
+`--key`, `-k`    | `<path>` |          | `true`   | Path to private key file used for decryption
+`--output`, `-o` | `<path>` | `stdout` | `false`  | File path to write decrypted data to
 
 ## How It Works
 
